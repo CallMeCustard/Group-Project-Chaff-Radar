@@ -1,0 +1,41 @@
+Number_Of_Strips = 500;
+Strip_Spacing = 400;
+Widths = 5;
+Lengths = 300;
+Size_X = 1.5;
+Size_Y = 2;
+Size_Z = 1;
+Scaled_Unit = 1;
+
+V = @(x,y,z)[x,y,z];
+
+geometry = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit,V);
+
+figure;
+hold on;
+for i = 1:size(geometry, 1) / 4
+    strip = geometry((i-1)*4+1:i*4,:);
+    plot(strip(:,1),strip(:,2), 'o-');
+end
+title('Chaff Cloud Distribution')
+xlabel('X Position (Scaled Units)')
+ylabel('Y Position (Scaled Units)')
+hold off;
+
+function strips = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit,V)
+    strips = [];
+    for i = 1:Number_Of_Strips
+        x = randi([-Strip_Spacing * Size_X, Strip_Spacing * Size_X]);
+        y = randi([-Strip_Spacing * Size_Y, Strip_Spacing * Size_Y]);
+        z = randi([-Strip_Spacing * Size_Z, Strip_Spacing * Size_Z]);
+        ang = randi([0,360]);
+
+        p1 = V(x,y,z) * Scaled_Unit;
+        p2 = V(x + Widths * sind(ang), y-Widths * cosd(ang), z) * Scaled_Unit;
+        p3 = V(x + Widths * sind(ang) + Lengths *cosd(ang), y-Widths * cosd(ang) + Lengths * sind(ang), z) * Scaled_Unit;
+        p4 = V(x + Lengths * cosd(ang), y+Lengths * sind(ang), z) * Scaled_Unit;
+
+        strip = [p1; p2; p3; p4];
+        strips = [strips; strip];
+    end
+end
