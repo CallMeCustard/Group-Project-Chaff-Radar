@@ -1,0 +1,53 @@
+Number_Of_Strips = 1000;
+Strip_Spacing = 4;
+Widths = 0.05;
+Lengths = 2;
+Size_X = 1.5;
+Size_Y = 2;
+Size_Z = 1;
+Scaled_Unit = 1;
+
+V = @(x,y,z)[x,y,z];
+
+geometry = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit,V);
+figure;
+hold on;
+for i = 1:size(geometry, 1) / 4
+    strip = geometry((i-1)*4+1:i*4,:);
+    plot3(strip(:,1),strip(:,2),strip(:,3),'-');
+end
+title('Chaff Cloud Distribution');
+xlabel('X Position (Scaled Units)');
+ylabel('Y Position (Scaled Units)');
+zlabel('Z Position (Scaled Units)');
+grid on;
+view(3);
+hold off;
+
+
+
+function strips = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit, V)
+    strips = [];
+    for i = 1:Number_Of_Strips
+        % Randomized positions (continuous cloud in all directions)
+        x = (rand() - 0.5) * Size_X * 2;
+        y = (rand() - 0.5) * Size_Y * 2;
+        z = (rand() - 0.5) * Size_Z * 2;  % Continuous distribution in Z
+
+        % Random orientation
+        ang = randi([0, 360]); % Ensures integer values
+
+        tilt_ang = (rand() - 0.5) * 10; % Small rotation in Z axis (±10 degrees)
+        dz = tan(deg2rad(tilt_ang)) * Lengths; % Convert tilt to a small height difference
+
+
+        p1 = V(x, y, z);
+        p2 = V(x + Widths * sind(ang), y - Widths * cosd(ang), z);
+        p3 = V(x + Widths * sind(ang) + Lengths * cosd(ang), y - Widths * cosd(ang) + Lengths * sind(ang), z + dz);
+        p4 = V(x + Lengths * cosd(ang), y + Lengths * sind(ang), z + dz);
+
+        % Store strip vertices
+        strip = [p1; p2; p3; p4];
+        strips = [strips; strip];
+    end
+end
