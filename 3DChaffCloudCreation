@@ -1,3 +1,4 @@
+%Sets up parameters
 Number_Of_Strips = 1000;
 Strip_Spacing = 4;
 Widths = 0.05;
@@ -6,17 +7,17 @@ Size_X = 1.5;
 Size_Y = 2;
 Size_Z = 1;
 Scaled_Unit = 1;
-
+%Defines a 3D vector space
 V = @(x,y,z)[x,y,z];
-
+%Calls function to create geometry of the chaff strips
 geometry = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit,V);
 figure;
 hold on;
-for i = 1:size(geometry, 1) / 4
-    strip = geometry((i-1)*4+1:i*4,:);
-    plot3(strip(:,1),strip(:,2),strip(:,3),'-');
+for i = 1:size(geometry, 1) / 4 %For loop iterates through the desired number of chaff fibres
+    strip = geometry((i-1)*4+1:i*4,:);%Creates the geometry for the chaff fibre
+    plot3(strip(:,1),strip(:,2),strip(:,3),'-');%Plots the chaff fibre in 3D plot
 end
-title('Chaff Cloud Distribution');
+title('Chaff Cloud Distribution'); %Creates plot
 xlabel('X Position (Scaled Units)');
 ylabel('Y Position (Scaled Units)');
 zlabel('Z Position (Scaled Units)');
@@ -24,49 +25,50 @@ grid on;
 view(3);
 hold off;
 
-max_spacing = 20;
-increment = 1;
-fps = 1;
-output_file = 'chaff_animation3D_2.mp4';
-video = VideoWriter(output_file, 'MPEG-4');
-video.FrameRate = fps;
-open(video);
+%Creates animation of plot
+max_spacing = 20; %Maximum distance between chaff
+increment = 1; %Incremental increase in distance
+fps = 1; %Frame rate of video
+output_file = 'chaff_animation3.mp4'; %The file created after animation
+video = VideoWriter(output_file, 'MPEG-4'); % Video writed to the output file and the type of file created
+video.FrameRate = fps; %Creates frame rate
+open(video); %Opens video
 
 
 figure;
 hold on;
-title('Chaff Cloud Distribution');
+title('Chaff Cloud Distribution');%Creates figure with title and label
 xlabel('X Position (Scaled Units)');
 ylabel('Y Position (Scaled Units)');
 zlabel('Z Position (Scaled Units)');
-xlim([-40 40]);
+xlim([-40 40]); %Limits axes so chaff cloud doesn't move around graph
 ylim([-40 40]);
 zlim([-20 20]);
 grid on;
 view(3);
 
-for spacing = Strip_Spacing:increment:max_spacing
-     geometry = setupGeometry(Number_Of_Strips, spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit,V);
+for spacing = Strip_Spacing:increment:max_spacing %Iterates between intial spacing and max spacing in the increments set out
+     geometry = setupGeometry(Number_Of_Strips, spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit,V); %Calculates the geometry of the chaff strips
      cla;
-     for i = 1:size(geometry,1) / 4
-         strip = geometry((i-1)*4+1:i*4,:);
-         plot3(strip(:,1),strip(:,2),strip(:,3),'-');
+     for i = 1:size(geometry,1) / 4 %Iterates through the number of chaff
+         strip = geometry((i-1)*4+1:i*4,:); %Stores the geometrical points of the chaff fibres
+         plot3(strip(:,1),strip(:,2),strip(:,3),'-'); %Plots the chaff cloud at each spacing
      end
-     frame = getframe(gcf);
-     writeVideo(video,frame);
+     frame = getframe(gcf); %Creates a frame out of the plot
+     writeVideo(video,frame); %Adds this frame to the video
      drawnow;
 end
-close(video);
+close(video); %Ends video and creates the output
 hold off; 
 
 
 
-function strips = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit, V)
+function strips = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths, Size_X, Size_Y, Size_Z, Scaled_Unit, V) %Function that creates geometry of chaff strips
     strips = [];
     for i = 1:Number_Of_Strips
-        x = randi([0, 2 * Strip_Spacing * Size_X]) - Strip_Spacing * Size_X;
-        y = randi([0, 2 * Strip_Spacing * Size_Y]) - Strip_Spacing * Size_Y;
-        z = randi([0, 2 * Strip_Spacing * Size_Z]) - Strip_Spacing * Size_Z;  % Continuous distribution in Z
+        x = randi([0, 2 * Strip_Spacing * Size_X]) - Strip_Spacing * Size_X; %Generates x coordinate
+        y = randi([0, 2 * Strip_Spacing * Size_Y]) - Strip_Spacing * Size_Y; %Generates y coordinate
+        z = randi([0, 2 * Strip_Spacing * Size_Z]) - Strip_Spacing * Size_Z; %Generates z coordinate
 
         % Random orientation
         ang = randi([0, 360]); % Ensures integer values
@@ -74,7 +76,7 @@ function strips = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths
         tilt_ang = (rand() - 0.5) * 90; % Small rotation in Z axis (±10 degrees)
         dz = tan(deg2rad(tilt_ang)) * Lengths; % Convert tilt to a small height difference
 
-
+        %Creates each point of the chaff fibre
         p1 = V(x, y, z);
         p2 = V(x + Widths * sind(ang), y - Widths * cosd(ang), z);
         p3 = V(x + Widths * sind(ang) + Lengths * cosd(ang), y - Widths * cosd(ang) + Lengths * sind(ang), z + dz);
@@ -85,3 +87,4 @@ function strips = setupGeometry(Number_Of_Strips, Strip_Spacing, Widths, Lengths
         strips = [strips; strip];
     end
 end
+
