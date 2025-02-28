@@ -1,0 +1,55 @@
+%Code to model 6DOF primarily using the paper: 
+%https://www.researchgate.net/publication/327064480_Experimental_and_numerical_study_of_chaff_cloud_kinetic_performance_under_the_impact_of_high_speed_airflow
+%Completed by BS
+clear;
+
+%initialising of parameters (ie angles, coefficients)
+theta = 10.0; %pitch angle (radians)
+psi_s = 10.0; %yaw? angle (radians)
+zeta = 10.0 % (radians)
+psi = 10.0 %(radians)
+nu = 10.0% (radians)
+
+%unit vectors defined
+n_d = [(-sin(zeta)*cos(psi)), (cos(nu)),  (sin(zeta)*sin(psi))] %unit vector of
+n_v = [(cos(theta)*cos(psi)), sin(theta), (-cos(theta)*sin(psi))] %unit vector of velocity 
+y = [cross(n_v, (cross(n_v,n_d)*dot(n_v,n_d)))/abs(cross(n_v,(cross(n_v,n_d)*dot(n_v,n_d))))] %unit vector of lift 
+n_y = [y,y,y]
+
+%variables for kinematics found from unit vectors
+gamma_s = -asin(((n_v(3)*n_y(1))-(n_v(1)*n_y(3))*n_y(2))/(sqrt(((n_v(1))^2)+(n_v(3))^2)*abs(n_y(2))))% roll angle (radians)
+alpha = abs((pi/2) - abs(acos(dot(n_d,n_v))*n_y(2)))/(n_y(2)) %angle of attack
+
+%constants 
+m = 0.5; %mass of chaff (g)
+g = 9.81; %accleration due to gravity (ms^2)
+rho = 1.0; %atmospheric density (assumed constant)
+
+%time steps
+t = 0.0; %time (s)
+dV_dt = 0.01; %change in velocity each time step
+dtheta_dt = 0.01; %change in theta each time step 
+dpsi_s_dt = 0.01; %change in psi each time step
+
+%varying parameters
+V = 3; %chaff velocity
+cx = 1.0; %aerodynamic coeficient in x
+cy = 1.0; %aerodynamic coeficient in y   
+S = 4*pi*(5)^2; %area of chaff (m^2) %want to treat like a sphere
+X = 0.1; %drag
+Y = 0.3; %lift
+
+%main kinematic equations %need to correct the function
+function kinematic_equations()
+      X = 0.5*cx*rho*(V)^2*S;
+      Y = 0.5*cy*rho*(V)^2*S;
+      A = m*dV_dt+(X)+(m*g*sin(theta)); %A is a dummy variable name
+      B = m*dtheta_dt-V*cos(gamma_s); %B is a dummy variable name
+      C = m*V*cos(theta)*dpsi_s_dt+Y*sin(gamma_s); %C is a dummy variable name
+end
+
+
+%need to add in cx/y and ax/y primes for how cx/y change
+%need to insert units 
+%include print function 
+
