@@ -1,0 +1,99 @@
+%% TEST: Dynamic Chaff Release from Moving Aircraft
+% Aircraft moves; chaff released over time, drifts & spreads
+% Radar beam fixed; occlusion score tracked and plotted
+
+clear; clf;
+
+%% Parameters
+lambda = 0.032;
+T = 60;                        % Timesteps
+dipoles_per_step = 20;
+g = [0, 0, -9.8e-3];           % Simple gravity (adjust scale)
+drift_strength = 0.03;
+spread_std = 0.2;
+beam_radius = 2.5;
+
+% Aircraft motion
+aircraft_pos = [0, 0, 0];
+v_aircraft = [0, 0.5, 0];      % Forward motion in Y
+
+% Radar setup
+radar_pos = [0, -60, 0];
+beam_vec = aircraft_pos - radar_pos;
+beam_dir = beam_vec / norm(beam_vec);
+
+% Arrays to hold chaff data
+positions = [];               % Nx3
+velocities = [];              % Nx3
+orientations = [];            % Nx3
+occlusion_scores = zeros(T,1);
+
+%% Set up figure
+figure;
+set(gcf, 'Position', [100, 100, 1000, 500]);
+
+for t = 1:T
+    % Update aircraft position
+    aircraft_pos = aircraft_pos + v_aircraft;
+
+    %% Chaff release
+    new_pos = repmat(aircraft_pos, dipoles_per_step, 1);
+    eject_velocity = repmat([-0.2, 0, 0], dipoles_per_step, 1);  % backward
+    new_vel = eject_velocity + 0.1 * randn(dipoles_per_step, 3); % random spread
+    new_orient = randn(dipoles_per_step, 3);
+    new_orient = new_orient ./ vecnorm(new_orient, 2, 2);
+
+    % Append new chaff
+    positions = [positions; new_pos];
+    velocities = [velocities; new_vel];
+    orientations = [orientations; new_orient];
+
+    N = size(positions, 1);
+
+    %% Update all chaff: drift, gravity, motion
+    drift = drift_strength * randn(N, 3);
+    orientations = orientations + drift;
+    orientations = orientations ./ vecnorm(orientations, 2, 2);
+
+    velocities = velocities + repmat(g, N, 1);
+    positions = positions + velocities;
+
+    %% Occlusion analysis
+    to_dipoles = positions - radar_pos;
+    proj_lengths = dot(to_dipoles, repmat(beam_dir, N, 1), 2);
+    proj_points = radar_pos + proj_lengths .* beam_dir;
+    dist_to_beam = vecnorm(positions - proj_points, 2, 2);
+    within_beam = dist_to_beam < beam_radius;
+    occlusion_scores(t) = sum(within_beam) / N;
+
+    %% Plot scene (left)
+    subplot(1,2,1); cla;
+    scatter3(positions(~within_beam,1), positions(~within_beam,2), positions(~within_beam,3), ...
+             10, [0.4 0.4 0.4], 'filled'); hold on;
+    scatter3(positions(within_beam,1), positions(within_beam,2), positions(within_beam,3), ...
+             12, [1 0 0], 'filled');
+    plot3(radar_pos(1), radar_pos(2), radar_pos(3), 'ko', 'MarkerSize', 8, 'LineWidth', 2);
+    plot3(aircraft_pos(1), aircraft_pos(2), aircraft_pos(3), 'b^', 'MarkerSize', 10, 'LineWidth', 2);
+    plot3([radar_pos(1), aircraft_pos(1)], ...
+          [radar_pos(2), aircraft_pos(2)], ...
+          [radar_pos(3), aircraft_pos(3)], 'k--', 'LineWidth', 1.5);
+    xlabel('X'); ylabel('Y'); zlabel('Z'); axis equal; view(3); grid on;
+    title(sprintf('Chaff Deployment at t = %d', t));
+
+    %% Plot occlusion score (right)
+    subplot(1,2,2);
+    plot(1:t, occlusion_scores(1:t), 'r-', 'LineWidth', 2);
+    ylim([0 1]); xlim([1 T]); grid on;
+    xlabel('Time Step'); ylabel('Occlusion Score');
+    title('Occlusion Score Over Time');
+
+    drawnow;
+
+    % Optional: Save animation frame to GIF
+    frame = getframe(gcf);
+    img = frame2im(frame);
+    save_gif_frame(img, 'chaff_release_scene', t);
+end
+
+% Save final static plot
+save_figure_to_figures('chaff_release_occlusion');
